@@ -625,19 +625,34 @@
 
     // Initialize on page load
     window.addEventListener('DOMContentLoaded', async () => {
+      // Supabase puede enviar tokens en hash (#) o query params (?)
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
-      const accessToken = hashParams.get('access_token');
-      const refreshToken = hashParams.get('refresh_token');
-      const type = hashParams.get('type');
+      const queryParams = new URLSearchParams(window.location.search);
+      
+      const accessToken = hashParams.get('access_token') || queryParams.get('access_token');
+      const refreshToken = hashParams.get('refresh_token') || queryParams.get('refresh_token');
+      const type = hashParams.get('type') || queryParams.get('type');
+      const errorCode = hashParams.get('error_code') || queryParams.get('error_code');
+      const errorDescription = hashParams.get('error_description') || queryParams.get('error_description');
+
+      // Debug: log params
+      console.log('URL:', window.location.href);
+      console.log('Params:', { accessToken: !!accessToken, refreshToken: !!refreshToken, type, errorCode });
 
       const pageSubtitle = document.getElementById('pageSubtitle');
       const submitBtn = document.getElementById('submitBtn');
       const resetForm = document.getElementById('resetForm');
       const invalidLink = document.getElementById('invalidLink');
 
+      // Check for errors from Supabase
+      if (errorCode || errorDescription) {
+        console.error('Supabase error:', errorCode, errorDescription);
+        showError(errorDescription || 'Error en el enlace');
+        invalidLink.classList.add('show');
+        return;
+      }
+
       // Flujos soportados:
-      // - type=recovery: "Olvidé mi contraseña"
-      // - type=invite o signup: "Activar cuenta" (invitación)
       const isRecovery = type === 'recovery';
       const isInvite = type === 'invite' || type === 'signup';
 
@@ -653,40 +668,16 @@
         submitBtn.textContent = isInvite ? 'Activar cuenta' : 'Cambiar contraseña';
       }
 
+      // Si no hay tokens válidos, mostrar enlace inválido
       if (!accessToken || !refreshToken || (!isRecovery && !isInvite)) {
+        console.log('Invalid params, showing error');
         invalidLink.classList.add('show');
         return;
       }
 
-      try {
-        // Establecer la sesión con timeout para evitar espera infinita
-        const sessionPromise = supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken
-        });
-
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Timeout')), 5000)
-        );
-
-        const { error } = await Promise.race([sessionPromise, timeoutPromise]);
-
-        if (error && error.message !== 'Timeout') {
-          console.error('Session error:', error);
-          showError('Error al validar el enlace: ' + error.message);
-          invalidLink.classList.add('show');
-          return;
-        }
-
-        // Show form even if validation had issues (tokens might still work for password update)
-        resetForm.style.display = 'block';
-        setupValidation();
-      } catch (error) {
-        // If timeout or error, still show form (optimistic approach)
-        console.warn('Session validation timeout or error, showing form anyway');
-        resetForm.style.display = 'block';
-        setupValidation();
-      }
+      // Mostrar formulario directamente (la validación real ocurre al hacer submit)
+      resetForm.style.display = 'block';
+      setupValidation();
     });
 
     function setupValidation() {
