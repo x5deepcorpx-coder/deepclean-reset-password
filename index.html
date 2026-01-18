@@ -632,32 +632,6 @@
       const resetForm = document.getElementById('resetForm');
       const invalidLink = document.getElementById('invalidLink');
 
-      // Development mode: show form immediately on localhost
-      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-      
-      if (isLocalhost && accessToken) {
-        // Skip validation in localhost, show form directly
-        const isRecovery = type === 'recovery';
-        const isInvite = type === 'invite' || type === 'signup';
-        
-        if (pageSubtitle) {
-          pageSubtitle.textContent = isInvite
-            ? 'Activa tu cuenta'
-            : isRecovery
-              ? 'Restablece tu contraseña'
-              : 'Validando enlace...';
-        }
-
-        if (submitBtn) {
-          submitBtn.textContent = isInvite ? 'Activar cuenta' : 'Cambiar contraseña';
-        }
-        
-        resetForm.style.display = 'block';
-        setupValidation();
-        return;
-      }
-
-      // Production mode: validate with Supabase
       // Flujos soportados:
       // - type=recovery: "Olvidé mi contraseña"
       // - type=invite o signup: "Activar cuenta" (invitación)
@@ -681,23 +655,35 @@
         return;
       }
 
-      // Establecer la sesión con el access token
-      const { error } = await supabase.auth.setSession({
-        access_token: accessToken,
-        refresh_token: refreshToken
-      });
+      try {
+        // Establecer la sesión con timeout para evitar espera infinita
+        const sessionPromise = supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken
+        });
 
-      if (error) {
-        showError('Error al validar el enlace: ' + error.message);
-        invalidLink.classList.add('show');
-        return;
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Timeout')), 5000)
+        );
+
+        const { error } = await Promise.race([sessionPromise, timeoutPromise]);
+
+        if (error && error.message !== 'Timeout') {
+          console.error('Session error:', error);
+          showError('Error al validar el enlace: ' + error.message);
+          invalidLink.classList.add('show');
+          return;
+        }
+
+        // Show form even if validation had issues (tokens might still work for password update)
+        resetForm.style.display = 'block';
+        setupValidation();
+      } catch (error) {
+        // If timeout or error, still show form (optimistic approach)
+        console.warn('Session validation timeout or error, showing form anyway');
+        resetForm.style.display = 'block';
+        setupValidation();
       }
-
-      // Show form
-      resetForm.style.display = 'block';
-
-      // Setup input listeners
-      setupValidation();
     });
 
     function setupValidation() {
