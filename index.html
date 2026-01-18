@@ -612,7 +612,8 @@
     const SUPABASE_URL = 'https://ykfhqeopolfhqdvckzuz.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlrZmhxZW9wb2xmaHFkdmNrenV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk3OTc2OTUsImV4cCI6MjA3NTM3MzY5NX0.UMToVd1EvyCib-vcP643BO5HE4rLtSu3fxR4XT1E8dE';
     
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // Use different name to avoid conflict with window.supabase
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     // Password validation state
     let validationState = {
@@ -874,7 +875,7 @@
       hideSuccess();
 
       try {
-        const { error } = await supabase.auth.updateUser({
+        const { error } = await supabaseClient.auth.updateUser({
           password: newPassword
         });
 
