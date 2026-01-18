@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Activar Cuenta / Restablecer Contraseña - DeepClean</title>
+  <link rel="icon" type="image/png" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧹</text></svg>">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(145deg, #0077B6 0%, #005A86 50%, #00B4D8 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: 24px;
+      box-shadow: 0 25px 80px rgba(0, 90, 134, 0.35);
+      max-width: 420px;
+      width: 100%;
+      padding: 48px 40px;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .logo {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+
+    .logo-icon {
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(145deg, #0077B6, #00B4D8);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+      box-shadow: 0 8px 24px rgba(0, 119, 182, 0.25);
+    }
+
+    .logo-icon span {
+      font-size: 40px;
+    }
+
+    .logo h1 {
+      color: #0077B6;
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .logo p {
+      color: #586E75;
+      font-size: 14px;
+      margin-top: 8px;
+    }
+
+    .form-group {
+      margin-bottom: 24px;
+    }
+
+    label {
+      display: block;
+      color: #07223B;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .input-wrapper {
+      position: relative;
+    }
+
+    input[type="password"],
+    input[type="text"] {
+      width: 100%;
+      padding: 14px 48px 14px 16px;
+      border: 2px solid #D6E7F3;
+      border-radius: 12px;
+      font-size: 16px;
+      transition: all 0.3s ease;
+      background: #FFFFFF;
+      color: #07223B;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #0077B6;
+      box-shadow: 0 0 0 4px rgba(0, 119, 182, 0.12);
+    }
+
+    input.error {
+      border-color: #EF4444;
+      box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.12);
+    }
+
+    input.valid {
+      border-color: #10B981;
+      box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.12);
+    }
+
+    .toggle-password {
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      color: #586E75;
+      font-size: 18px;
+      transition: color 0.2s;
+    }
+
+    .toggle-password:hover {
+      color: #0077B6;
+    }
+
+    /* Password Validation Rules */
+    .password-rules {
+      margin-top: 16px;
+      padding: 16px;
+      background: #EEF6FC;
+      border-radius: 12px;
+      border: 1px solid #D6E7F3;
+    }
+
+    .password-rules-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: #586E75;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+    }
+
+    .rule {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 0;
+      font-size: 14px;
+      color: #586E75;
+      transition: all 0.3s ease;
+    }
+
+    .rule-icon {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      transition: all 0.3s ease;
+      background: #D6E7F3;
+      color: #586E75;
+      flex-shrink: 0;
+    }
+
+    .rule.valid .rule-icon {
+      background: #10B981;
+      color: white;
+    }
+
+    .rule.valid {
+      color: #10B981;
+    }
+
+    .rule.invalid .rule-icon {
+      background: #FEE2E2;
+      color: #EF4444;
+    }
+
+    /* Password Strength Bar */
+    .password-strength {
+      margin-top: 12px;
+    }
+
+    .strength-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .strength-text {
+      font-size: 12px;
+      font-weight: 600;
+      color: #586E75;
+    }
+
+    .strength-level {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 2px 10px;
+      border-radius: 12px;
+      transition: all 0.3s;
+    }
+
+    .strength-level.weak {
+      background: #FEE2E2;
+      color: #EF4444;
+    }
+
+    .strength-level.medium {
+      background: #FEF3C7;
+      color: #D97706;
+    }
+
+    .strength-level.strong {
+      background: #D1FAE5;
+      color: #059669;
+    }
+
+    .strength-bar-container {
+      height: 6px;
+      background: #E5E7EB;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .strength-bar {
+      height: 100%;
+      transition: all 0.4s ease;
+      width: 0%;
+      border-radius: 3px;
+    }
+
+    .strength-bar.weak {
+      background: linear-gradient(90deg, #EF4444, #F87171);
+      width: 33%;
+    }
+
+    .strength-bar.medium {
+      background: linear-gradient(90deg, #F59E0B, #FBBF24);
+      width: 66%;
+    }
+
+    .strength-bar.strong {
+      background: linear-gradient(90deg, #10B981, #34D399);
+      width: 100%;
+    }
+
+    /* Password Match Indicator */
+    .match-indicator {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+      font-size: 13px;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .match-indicator.show {
+      opacity: 1;
+    }
+
+    .match-indicator.match {
+      color: #10B981;
+    }
+
+    .match-indicator.no-match {
+      color: #EF4444;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(145deg, #0077B6 0%, #005A86 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 16px rgba(0, 119, 182, 0.3);
+      margin-top: 8px;
+    }
+
+    .btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 119, 182, 0.4);
+    }
+
+    .btn:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      background: #A5B4BF;
+      box-shadow: none;
+    }
+
+    .alert {
+      padding: 14px 16px;
+      border-radius: 12px;
+      margin-bottom: 24px;
+      font-size: 14px;
+      display: none;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .alert.show {
+      display: flex;
+    }
+
+    .alert-icon {
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .alert-error {
+      background: #FEF2F2;
+      border: 1px solid #FECACA;
+      color: #991B1B;
+    }
+
+    .alert-success {
+      background: #F0FDF4;
+      border: 1px solid #BBF7D0;
+      color: #166534;
+    }
+
+    .loading {
+      display: none;
+      text-align: center;
+      padding: 40px 0;
+    }
+
+    .loading.show {
+      display: block;
+    }
+
+    .spinner {
+      border: 4px solid #E5E7EB;
+      border-top: 4px solid #0077B6;
+      border-radius: 50%;
+      width: 48px;
+      height: 48px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 16px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .success-message {
+      display: none;
+      text-align: center;
+      padding: 20px 0;
+    }
+
+    .success-message.show {
+      display: block;
+    }
+
+    .success-icon {
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(145deg, #10B981, #34D399);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 24px;
+      box-shadow: 0 8px 24px rgba(16, 185, 129, 0.3);
+    }
+
+    .success-icon span {
+      font-size: 40px;
+      color: white;
+    }
+
+    .success-message h2 {
+      color: #059669;
+      font-size: 24px;
+      margin-bottom: 12px;
+    }
+
+    .success-message p {
+      color: #586E75;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    .success-message .app-hint {
+      margin-top: 24px;
+      padding: 16px;
+      background: #EEF6FC;
+      border-radius: 12px;
+      border: 1px solid #D6E7F3;
+    }
+
+    .success-message .app-hint p {
+      color: #0077B6;
+      font-weight: 500;
+    }
+
+    /* Invalid Link State */
+    .invalid-link {
+      display: none;
+      text-align: center;
+      padding: 20px 0;
+    }
+
+    .invalid-link.show {
+      display: block;
+    }
+
+    .invalid-icon {
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(145deg, #F59E0B, #FBBF24);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 24px;
+      box-shadow: 0 8px 24px rgba(245, 158, 11, 0.3);
+    }
+
+    .invalid-icon span {
+      font-size: 40px;
+      color: white;
+    }
+
+    .invalid-link h2 {
+      color: #D97706;
+      font-size: 22px;
+      margin-bottom: 12px;
+    }
+
+    .invalid-link p {
+      color: #586E75;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    /* Responsive */
+    @media (max-width: 480px) {
+      .container {
+        padding: 36px 24px;
+        border-radius: 20px;
+      }
+
+      .logo h1 {
+        font-size: 24px;
+      }
+
+      .logo-icon {
+        width: 64px;
+        height: 64px;
+      }
+
+      .logo-icon span {
+        font-size: 32px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">
+      <!-- Logo de DeepClean -->
+      <div class="logo-icon">
+        <span>🧹</span>
+      </div>
+      <h1>DeepClean</h1>
+      <p id="pageSubtitle">Validando enlace...</p>
+    </div>
+
+    <div id="errorMessage" class="alert alert-error">
+      <span class="alert-icon">⚠️</span>
+      <span id="errorText"></span>
+    </div>
+    <div id="successAlert" class="alert alert-success">
+      <span class="alert-icon">✓</span>
+      <span id="successText"></span>
+    </div>
+
+    <!-- Invalid Link State -->
+    <div id="invalidLink" class="invalid-link">
+      <div class="invalid-icon">
+        <span>⚠️</span>
+      </div>
+      <h2>Enlace inválido o expirado</h2>
+      <p>
+        Este enlace ya no es válido. Por favor solicita un nuevo enlace de recuperación desde la aplicación DeepClean.
+      </p>
+    </div>
+
+    <!-- Password Form -->
+    <div id="resetForm" style="display: none;">
+      <div class="form-group">
+        <label for="newPassword">Nueva Contraseña</label>
+        <div class="input-wrapper">
+          <input 
+            type="password" 
+            id="newPassword" 
+            placeholder="Ingresa tu nueva contraseña"
+            autocomplete="new-password"
+          >
+          <button type="button" class="toggle-password" onclick="togglePassword('newPassword', this)">
+            👁️
+          </button>
+        </div>
+        
+        <!-- Password Validation Rules -->
+        <div class="password-rules">
+          <div class="password-rules-title">Requisitos de contraseña</div>
+          <div class="rule" id="rule-length">
+            <span class="rule-icon">○</span>
+            <span>Al menos 8 caracteres</span>
+          </div>
+          <div class="rule" id="rule-uppercase">
+            <span class="rule-icon">○</span>
+            <span>Una letra mayúscula (A-Z)</span>
+          </div>
+          <div class="rule" id="rule-number">
+            <span class="rule-icon">○</span>
+            <span>Un número (0-9)</span>
+          </div>
+          <div class="rule" id="rule-symbol">
+            <span class="rule-icon">○</span>
+            <span>Un símbolo (!@#$%^&*...)</span>
+          </div>
+        </div>
+
+        <!-- Password Strength -->
+        <div class="password-strength">
+          <div class="strength-label">
+            <span class="strength-text">Seguridad:</span>
+            <span id="strengthLevel" class="strength-level">—</span>
+          </div>
+          <div class="strength-bar-container">
+            <div id="strengthBar" class="strength-bar"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="confirmPassword">Confirmar Contraseña</label>
+        <div class="input-wrapper">
+          <input 
+            type="password" 
+            id="confirmPassword" 
+            placeholder="Confirma tu nueva contraseña"
+            autocomplete="new-password"
+          >
+          <button type="button" class="toggle-password" onclick="togglePassword('confirmPassword', this)">
+            👁️
+          </button>
+        </div>
+        <div id="matchIndicator" class="match-indicator">
+          <span id="matchIcon"></span>
+          <span id="matchText"></span>
+        </div>
+      </div>
+
+      <button type="button" class="btn" id="submitBtn" onclick="handleSubmit()" disabled>
+        Establecer contraseña
+      </button>
+    </div>
+
+    <!-- Success State -->
+    <div class="success-message" id="successMessage">
+      <div class="success-icon">
+        <span>✓</span>
+      </div>
+      <h2>¡Contraseña actualizada!</h2>
+      <p>Tu contraseña ha sido establecida correctamente.</p>
+      <div class="app-hint">
+        <p>📱 Ya puedes cerrar esta ventana y volver a la app DeepClean para iniciar sesión.</p>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div class="loading" id="loading">
+      <div class="spinner"></div>
+      <p style="color: #586E75; font-size: 15px;">Actualizando contraseña...</p>
+    </div>
+  </div>
+
+  <script>
+    // Configuration - These are PUBLIC keys (anon key), safe to expose
+    const SUPABASE_URL = 'https://ykfhqeopolfhqdvckzuz.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlrZmhxZW9wb2xmaHFkdmNrenV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk3OTc2OTUsImV4cCI6MjA3NTM3MzY5NX0.UMToVd1EvyCib-vcP643BO5HE4rLtSu3fxR4XT1E8dE';
+    
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // Password validation state
+    let validationState = {
+      length: false,
+      uppercase: false,
+      number: false,
+      symbol: false,
+      match: false
+    };
+
+    // Initialize on page load
+    window.addEventListener('DOMContentLoaded', async () => {
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const accessToken = hashParams.get('access_token');
+      const refreshToken = hashParams.get('refresh_token');
+      const type = hashParams.get('type');
+
+      const pageSubtitle = document.getElementById('pageSubtitle');
+      const submitBtn = document.getElementById('submitBtn');
+      const resetForm = document.getElementById('resetForm');
+      const invalidLink = document.getElementById('invalidLink');
+
+      // Development mode: show form immediately on localhost
+      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      
+      if (isLocalhost && accessToken) {
+        // Skip validation in localhost, show form directly
+        const isRecovery = type === 'recovery';
+        const isInvite = type === 'invite' || type === 'signup';
+        
+        if (pageSubtitle) {
+          pageSubtitle.textContent = isInvite
+            ? 'Activa tu cuenta'
+            : isRecovery
+              ? 'Restablece tu contraseña'
+              : 'Validando enlace...';
+        }
+
+        if (submitBtn) {
+          submitBtn.textContent = isInvite ? 'Activar cuenta' : 'Cambiar contraseña';
+        }
+        
+        resetForm.style.display = 'block';
+        setupValidation();
+        return;
+      }
+
+      // Production mode: validate with Supabase
+      // Flujos soportados:
+      // - type=recovery: "Olvidé mi contraseña"
+      // - type=invite o signup: "Activar cuenta" (invitación)
+      const isRecovery = type === 'recovery';
+      const isInvite = type === 'invite' || type === 'signup';
+
+      if (pageSubtitle) {
+        pageSubtitle.textContent = isInvite
+          ? 'Activa tu cuenta'
+          : isRecovery
+            ? 'Restablece tu contraseña'
+            : 'Validando enlace...';
+      }
+
+      if (submitBtn) {
+        submitBtn.textContent = isInvite ? 'Activar cuenta' : 'Cambiar contraseña';
+      }
+
+      if (!accessToken || !refreshToken || (!isRecovery && !isInvite)) {
+        invalidLink.classList.add('show');
+        return;
+      }
+
+      // Establecer la sesión con el access token
+      const { error } = await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken
+      });
+
+      if (error) {
+        showError('Error al validar el enlace: ' + error.message);
+        invalidLink.classList.add('show');
+        return;
+      }
+
+      // Show form
+      resetForm.style.display = 'block';
+
+      // Setup input listeners
+      setupValidation();
+    });
+
+    function setupValidation() {
+      const newPasswordInput = document.getElementById('newPassword');
+      const confirmPasswordInput = document.getElementById('confirmPassword');
+
+      newPasswordInput.addEventListener('input', validatePassword);
+      confirmPasswordInput.addEventListener('input', validatePasswordMatch);
+      confirmPasswordInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && !document.getElementById('submitBtn').disabled) {
+          handleSubmit();
+        }
+      });
+    }
+
+    function validatePassword() {
+      const password = document.getElementById('newPassword').value;
+      const newPasswordInput = document.getElementById('newPassword');
+
+      // Check each rule
+      validationState.length = password.length >= 8;
+      validationState.uppercase = /[A-Z]/.test(password);
+      validationState.number = /[0-9]/.test(password);
+      validationState.symbol = /[^a-zA-Z0-9]/.test(password);
+
+      // Update rule indicators
+      updateRule('rule-length', validationState.length);
+      updateRule('rule-uppercase', validationState.uppercase);
+      updateRule('rule-number', validationState.number);
+      updateRule('rule-symbol', validationState.symbol);
+
+      // Calculate strength
+      const strength = [
+        validationState.length,
+        validationState.uppercase,
+        validationState.number,
+        validationState.symbol
+      ].filter(Boolean).length;
+
+      updateStrengthBar(strength);
+
+      // Update input border
+      if (password.length === 0) {
+        newPasswordInput.classList.remove('valid', 'error');
+      } else if (strength === 4) {
+        newPasswordInput.classList.remove('error');
+        newPasswordInput.classList.add('valid');
+      } else {
+        newPasswordInput.classList.remove('valid');
+        newPasswordInput.classList.add('error');
+      }
+
+      // Re-validate match if confirm has value
+      if (document.getElementById('confirmPassword').value) {
+        validatePasswordMatch();
+      }
+
+      updateSubmitButton();
+    }
+
+    function updateRule(ruleId, isValid) {
+      const rule = document.getElementById(ruleId);
+      const icon = rule.querySelector('.rule-icon');
+
+      if (isValid) {
+        rule.classList.add('valid');
+        rule.classList.remove('invalid');
+        icon.textContent = '✓';
+      } else {
+        rule.classList.remove('valid');
+        rule.classList.add('invalid');
+        icon.textContent = '○';
+      }
+    }
+
+    function updateStrengthBar(strength) {
+      const strengthBar = document.getElementById('strengthBar');
+      const strengthLevel = document.getElementById('strengthLevel');
+
+      strengthBar.className = 'strength-bar';
+      strengthLevel.className = 'strength-level';
+
+      if (strength === 0) {
+        strengthLevel.textContent = '—';
+      } else if (strength <= 2) {
+        strengthBar.classList.add('weak');
+        strengthLevel.classList.add('weak');
+        strengthLevel.textContent = 'Débil';
+      } else if (strength === 3) {
+        strengthBar.classList.add('medium');
+        strengthLevel.classList.add('medium');
+        strengthLevel.textContent = 'Aceptable';
+      } else {
+        strengthBar.classList.add('strong');
+        strengthLevel.classList.add('strong');
+        strengthLevel.textContent = 'Fuerte';
+      }
+    }
+
+    function validatePasswordMatch() {
+      const password = document.getElementById('newPassword').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+      const confirmInput = document.getElementById('confirmPassword');
+      const matchIndicator = document.getElementById('matchIndicator');
+      const matchIcon = document.getElementById('matchIcon');
+      const matchText = document.getElementById('matchText');
+
+      if (confirmPassword.length === 0) {
+        matchIndicator.classList.remove('show');
+        confirmInput.classList.remove('valid', 'error');
+        validationState.match = false;
+      } else {
+        matchIndicator.classList.add('show');
+
+        if (password === confirmPassword) {
+          validationState.match = true;
+          matchIndicator.classList.add('match');
+          matchIndicator.classList.remove('no-match');
+          matchIcon.textContent = '✓';
+          matchText.textContent = 'Las contraseñas coinciden';
+          confirmInput.classList.add('valid');
+          confirmInput.classList.remove('error');
+        } else {
+          validationState.match = false;
+          matchIndicator.classList.add('no-match');
+          matchIndicator.classList.remove('match');
+          matchIcon.textContent = '✗';
+          matchText.textContent = 'Las contraseñas no coinciden';
+          confirmInput.classList.add('error');
+          confirmInput.classList.remove('valid');
+        }
+      }
+
+      updateSubmitButton();
+    }
+
+    function updateSubmitButton() {
+      const submitBtn = document.getElementById('submitBtn');
+      const allValid = 
+        validationState.length &&
+        validationState.uppercase &&
+        validationState.number &&
+        validationState.symbol &&
+        validationState.match;
+
+      submitBtn.disabled = !allValid;
+    }
+
+    function togglePassword(inputId, button) {
+      const input = document.getElementById(inputId);
+      if (input.type === 'password') {
+        input.type = 'text';
+        button.textContent = '🙈';
+      } else {
+        input.type = 'password';
+        button.textContent = '👁️';
+      }
+    }
+
+    async function handleSubmit() {
+      const newPassword = document.getElementById('newPassword').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+
+      // Double-check validations
+      if (!validationState.length) {
+        showError('La contraseña debe tener al menos 8 caracteres');
+        return;
+      }
+
+      if (!validationState.uppercase) {
+        showError('La contraseña debe incluir al menos una letra mayúscula');
+        return;
+      }
+
+      if (!validationState.number) {
+        showError('La contraseña debe incluir al menos un número');
+        return;
+      }
+
+      if (!validationState.symbol) {
+        showError('La contraseña debe incluir al menos un símbolo');
+        return;
+      }
+
+      if (newPassword !== confirmPassword) {
+        showError('Las contraseñas no coinciden');
+        return;
+      }
+
+      // Show loading
+      document.getElementById('resetForm').style.display = 'none';
+      document.getElementById('loading').classList.add('show');
+      hideError();
+      hideSuccess();
+
+      try {
+        const { error } = await supabase.auth.updateUser({
+          password: newPassword
+        });
+
+        if (error) throw error;
+
+        // Show success
+        document.getElementById('loading').classList.remove('show');
+        document.getElementById('successMessage').classList.add('show');
+
+      } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('loading').classList.remove('show');
+        document.getElementById('resetForm').style.display = 'block';
+        showError(error.message || 'Error al actualizar contraseña');
+      }
+    }
+
+    function showError(message) {
+      const errorEl = document.getElementById('errorMessage');
+      document.getElementById('errorText').textContent = message;
+      errorEl.classList.add('show');
+    }
+
+    function hideError() {
+      document.getElementById('errorMessage').classList.remove('show');
+    }
+
+    function showSuccess(message) {
+      const successEl = document.getElementById('successAlert');
+      document.getElementById('successText').textContent = message;
+      successEl.classList.add('show');
+    }
+
+    function hideSuccess() {
+      document.getElementById('successAlert').classList.remove('show');
+    }
+  </script>
+</body>
+</html>
